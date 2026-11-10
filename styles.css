@@ -73,6 +73,13 @@ h2 {
   font-size: 1.1rem;
 }
 
+.h2-hint {
+  margin-inline-start: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
 .hero p {
   margin: 6px 0 0;
   color: var(--muted);

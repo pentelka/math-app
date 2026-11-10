@@ -4,12 +4,12 @@ Multiple-choice practice on the rules of algebra, focused on the mistakes studen
 actually make, from the basics up to the 5-unit (5 יח״ל) Bagrut level. The interface
 is in Hebrew.
 
-- **Choose a level, then a topic.** Levels: יסודות (grades 8–9), 3 יח״ל, 4 יח״ל and
+- **Choose a level, then one or more topics.** Levels: יסודות (grades 8–9), 3 יח״ל, 4 יח״ל and
   5 יח״ל. Topics: order of operations and signs, expanding brackets, exponent rules,
   special products, algebraic fractions, linear equations and inequalities,
   factoring, quadratic equations, roots, absolute value, domain and extraneous
-  solutions, inequalities, logarithms and exponential equations. You can also mix all
-  topics up to the chosen level.
+  solutions, inequalities, logarithms and exponential equations. Pick any combination of
+  topics, or "הכול מעורבב" for all topics up to the chosen level.
 - **Four answers per question.** The wrong answers are the common mistakes, such as
   $(a+b)^2=a^2+b^2$, $\sqrt{a+b}=\sqrt a+\sqrt b$ or forgetting to flip an
   inequality.
