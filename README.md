@@ -8,7 +8,7 @@ is in Hebrew.
   5 יח״ל. Topics: order of operations and signs, expanding brackets, exponent rules,
   special products, algebraic fractions, linear equations and inequalities,
   factoring, quadratic equations, roots, absolute value, domain and extraneous
-  solutions, inequalities, logarithms and exponential equations. Pick any combination of
+  solutions, inequalities, logarithms, exponential equations and parameters. Pick any combination of
   topics, or "הכול מעורבב" for all topics up to the chosen level.
 - **Four answers per question.** The wrong answers are the common mistakes, such as
   $(a+b)^2=a^2+b^2$, $\sqrt{a+b}=\sqrt a+\sqrt b$ or forgetting to flip an
@@ -24,6 +24,8 @@ is in Hebrew.
   seen, come up more often. A "practise my mistakes" round collects the questions
   whose last answer was wrong. Progress stays on that device and browser only, with
   no account.
+- **A timer for each question.** It counts up and is never a limit. The results show
+  the total time and the average per question.
 - No calculations that need pen and paper.
 
 ## Play it

@@ -228,8 +228,8 @@ button:focus-visible {
 .level {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   border: 2px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
@@ -253,8 +253,8 @@ button:focus-visible {
   flex: none;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   background: var(--primary-soft);
   color: var(--primary-strong);
@@ -395,6 +395,21 @@ button:focus-visible {
   justify-content: space-between;
   gap: 8px;
   font-weight: 700;
+}
+
+.pills {
+  display: flex;
+  gap: 6px;
+}
+
+.timer {
+  font-variant-numeric: tabular-nums;
+  min-width: 64px;
+  text-align: center;
+}
+
+.timer::before {
+  content: '⏱ ';
 }
 
 .score-pill {
@@ -638,6 +653,18 @@ button:focus-visible {
   font-size: 0.85rem;
 }
 
+.final-time {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.final-time strong {
+  color: var(--primary-strong);
+  font-variant-numeric: tabular-nums;
+}
+
 .final-message {
   margin: 0;
   text-align: center;
@@ -648,12 +675,6 @@ button:focus-visible {
 .weak-topics {
   margin: 8px 0 0;
   padding-inline-start: 20px;
-}
-
-@media (max-width: 380px) {
-  .levels {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -882,4 +903,11 @@ button:focus-visible {
   .tiles {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.round-time {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
 }

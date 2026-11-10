@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0284c7" />
+    <!-- The page has its own light and dark themes; stops browsers (e.g. Samsung Internet,
+         Chrome on Android) from force-darkening it. -->
+    <meta name="color-scheme" content="light dark" />
     <title>אלגברה בלי טעויות</title>
     <link rel="stylesheet" href="vendor/katex/katex.min.css" />
     <link rel="stylesheet" href="styles.css" />
@@ -85,7 +88,10 @@
         <div class="topbar">
           <button id="quit-button" type="button" class="icon-button" aria-label="חזרה לתפריט">✕</button>
           <span id="progress-text"></span>
-          <span id="score-text" class="score-pill"></span>
+          <span class="pills">
+            <span id="timer" class="score-pill timer" aria-label="זמן לשאלה" dir="ltr"></span>
+            <span id="score-text" class="score-pill"></span>
+          </span>
         </div>
         <div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
 
@@ -116,6 +122,7 @@
             <span class="final-label">תשובות נכונות</span>
           </div>
         </div>
+        <p id="final-time" class="final-time"></p>
         <p id="final-message" class="final-message"></p>
         <div id="weak-section" class="card">
           <h2>נושאים לחזור עליהם</h2>

@@ -2,7 +2,8 @@
 //
 // Shape (version 1):
 //   questions: { [questionId]: { seen, correct, streak, last: 'right'|'wrong', lastSeen } }
-//   rounds:    [{ t, level, topics, right, total, kind }]   most recent last, capped
+//   rounds:    [{ t, level, topics, right, total, kind, ms }]  most recent last, capped;
+//              ms = total answering time
 //   days:      ['YYYY-MM-DD', ...]                           local days with practice, capped
 //
 // The functions below are pure (they take `now` as a timestamp) so they can be tested in
@@ -91,6 +92,7 @@
       right: round.right,
       total: round.total,
       kind: round.kind || 'normal',
+      ms: typeof round.ms === 'number' ? Math.round(round.ms) : undefined,
     });
     if (p.rounds.length > MAX_ROUNDS) p.rounds.splice(0, p.rounds.length - MAX_ROUNDS);
     return p;

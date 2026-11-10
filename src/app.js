@@ -27,6 +27,7 @@
     inequalities: '<',
     logs: '\\log',
     exponential: 'a^x',
+    params: 'k',
   };
 
   const state = {
@@ -37,6 +38,10 @@
     results: [],
     answered: false,
     kind: 'normal', // 'normal' | 'retry' (this round's mistakes) | 'mistakes' (saved mistakes)
+    // Answer timer for the current question. Time while the page is hidden doesn't count.
+    qElapsed: 0, // ms banked before qStart
+    qStart: null, // performance.now() when the clock last (re)started; null when stopped
+    timerId: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -108,7 +113,7 @@
         mathIcon(LEVEL_ICONS[level.id], 'level-icon') +
         '<span class="level-text">' +
         '<span class="level-name">' + escapeHtml(level.label) + '</span>' +
-        '<span class="level-hint">' + escapeHtml(level.hint) + '</span>' +
+        (level.hint ? '<span class="level-hint">' + escapeHtml(level.hint) + '</span>' : '') +
         '</span>';
       btn.addEventListener('click', () => {
         state.level = level.id;
@@ -150,6 +155,48 @@
     else state.topics = state.topics.concat(key);
     renderTopics();
   }
+
+  // ----- Timer -----
+
+  function formatTime(ms) {
+    const total = Math.floor(ms / 1000);
+    return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
+  }
+
+  function questionMs() {
+    return state.qElapsed + (state.qStart !== null ? performance.now() - state.qStart : 0);
+  }
+
+  function renderTimer() {
+    $('timer').textContent = formatTime(questionMs());
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.qElapsed = 0;
+    state.qStart = document.hidden ? null : performance.now();
+    renderTimer();
+    state.timerId = setInterval(renderTimer, 250);
+  }
+
+  // Freezes the clock and returns the time spent on the question.
+  function stopTimer() {
+    state.qElapsed = questionMs();
+    state.qStart = null;
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = null;
+    return state.qElapsed;
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!state.timerId) return; // clock not running
+    if (document.hidden && state.qStart !== null) {
+      state.qElapsed += performance.now() - state.qStart;
+      state.qStart = null;
+    } else if (!document.hidden && state.qStart === null) {
+      state.qStart = performance.now();
+    }
+  });
 
   // ----- Play screen -----
 
@@ -200,14 +247,17 @@
     });
 
     $('feedback').hidden = true;
+    startTimer();
   }
 
   function choose(i) {
     if (state.answered) return;
     state.answered = true;
+    const ms = stopTimer();
+    renderTimer();
     const q = state.round[state.index];
     const correct = i === q.answer;
-    state.results.push({ question: q, correct });
+    state.results.push({ question: q, correct, ms });
     Progress.recordAnswer(progress, q.id, correct, Date.now());
     Progress.save(progress);
 
@@ -244,7 +294,12 @@
     const total = state.results.length;
     const right = state.results.filter((r) => r.correct).length;
     const ratio = total ? right / total : 0;
-    Progress.recordRound(progress, { level: state.level, topics: state.topics, right, total, kind: state.kind }, Date.now());
+    const totalMs = state.results.reduce((sum, r) => sum + r.ms, 0);
+    const avgSeconds = total ? Math.round(totalMs / total / 100) / 10 : 0;
+    $('final-time').innerHTML =
+      'זמן כולל <strong dir="ltr">' + formatTime(totalMs) + '</strong> · ממוצע <strong dir="ltr">' +
+      avgSeconds + '</strong> שניות לשאלה';
+    Progress.recordRound(progress, { level: state.level, topics: state.topics, right, total, kind: state.kind, ms: totalMs }, Date.now());
     Progress.save(progress);
     $('final-score').textContent = right + '/' + total;
     $('score-ring').style.setProperty('--p', Math.round(ratio * 100));
@@ -353,6 +408,7 @@
       li.innerHTML =
         '<span class="round-date">' + escapeHtml(date) + '</span>' +
         '<span class="round-what">' + escapeHtml(what) + '</span>' +
+        (typeof r.ms === 'number' ? '<span class="round-time" dir="ltr">' + formatTime(r.ms) + '</span>' : '') +
         '<span class="round-score" dir="ltr">' + r.right + '/' + r.total + '</span>';
       recent.appendChild(li);
     });
@@ -379,7 +435,10 @@
     }
   });
   $('menu-button').addEventListener('click', () => show('start'));
-  $('quit-button').addEventListener('click', () => show('start'));
+  $('quit-button').addEventListener('click', () => {
+    stopTimer();
+    show('start');
+  });
   $('next-button').addEventListener('click', next);
 
   document.addEventListener('keydown', (e) => {

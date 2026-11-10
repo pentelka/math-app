@@ -9,9 +9,9 @@
 
   const LEVELS = [
     { id: 1, label: 'יסודות', hint: 'כיתות ח׳–ט׳' },
-    { id: 2, label: '3 יח״ל', hint: 'פירוק, משוואות ריבועיות, שורשים' },
-    { id: 3, label: '4 יח״ל', hint: 'ערך מוחלט, תחום הגדרה, אי-שוויונות' },
-    { id: 4, label: '5 יח״ל', hint: 'לוגריתמים ומשוואות מעריכיות' },
+    { id: 2, label: '3 יח״ל', hint: 'בגרות' },
+    { id: 3, label: '4 יח״ל', hint: 'בגרות' },
+    { id: 4, label: '5 יח״ל', hint: 'בגרות' },
   ];
 
   // In display order. A topic is offered from its minLevel upwards.
@@ -30,6 +30,7 @@
     { key: 'inequalities', label: 'אי-שוויונות', minLevel: 3 },
     { key: 'logs', label: 'לוגריתמים', minLevel: 4 },
     { key: 'exponential', label: 'משוואות מעריכיות', minLevel: 4 },
+    { key: 'params', label: 'פרמטרים', minLevel: 4 },
   ];
 
   const TYPES = {
