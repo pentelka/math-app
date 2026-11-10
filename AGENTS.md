@@ -14,6 +14,9 @@ and computers, with no build step and no dependencies.
   practice days) and the priority that makes wrong or unseen questions likelier. Pure
   functions take `now`; only `load`/`save`/`clear` touch storage, and they never throw.
   If the stored shape changes, bump `version` and the storage key.
+- `src/counter.js`: the public count of completed rounds, stored in the anonymous Abacus
+  counter service. Only `pentelka.github.io` increments it; everything else only reads.
+  Failures resolve to `null` and the number is hidden.
 - `src/app.js`: screens, input and rendering text with `$math$`.
 - `vendor/katex/`: KaTeX 0.16.11 (MIT), vendored so the app works offline. Only the
   woff2 fonts are included.
@@ -37,9 +40,10 @@ and computers, with no build step and no dependencies.
 ## Rules
 
 - Keep it working when `index.html` is opened directly from disk: plain scripts, no ES
-  modules, no bundler, no CDNs or network calls.
+  modules, no bundler, no CDNs. The only network call is the anonymous round counter, and
+  the app must work fully without it. Add `?counter=off` to the URL to disable it.
 - The interface text is Hebrew. Math is always rendered left-to-right inside
   `<span class="math" dir="ltr">`.
 - No ads, tracking or accounts. Settings and progress stay in `localStorage`, wrapped in
-  try/catch, and nothing leaves the device.
+  try/catch. The round counter sends nothing personal, only "one more round".
 - Run `npm test` before committing.

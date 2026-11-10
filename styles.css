@@ -911,3 +911,30 @@ button:focus-visible {
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* ----- Public counter ----- */
+.hero-count {
+  display: inline-block;
+  margin: 12px 0 0 !important;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 0.9rem;
+  opacity: 1 !important;
+}
+
+.hero-count::before {
+  content: '∑ ';
+  font-family: var(--math-font);
+}
+
+.final-global {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.final-global strong {
+  color: var(--primary-strong);
+}

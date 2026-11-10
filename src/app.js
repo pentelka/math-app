@@ -300,6 +300,8 @@
       'זמן כולל <strong dir="ltr">' + formatTime(totalMs) + '</strong> · ממוצע <strong dir="ltr">' +
       avgSeconds + '</strong> שניות לשאלה';
     Progress.recordRound(progress, { level: state.level, topics: state.topics, right, total, kind: state.kind, ms: totalMs }, Date.now());
+    // Counts rounds where all the questions of a full round were answered.
+    if (total >= Quiz.ROUND_LENGTH) countCompletedRound();
     Progress.save(progress);
     $('final-score').textContent = right + '/' + total;
     $('score-ring').style.setProperty('--p', Math.round(ratio * 100));
@@ -414,6 +416,35 @@
     });
   }
 
+  // ----- Public counter of completed rounds -----
+
+  function formatCount(n) {
+    return n.toLocaleString('he-IL');
+  }
+
+  function renderGlobalCount(n) {
+    const el = $('global-count');
+    if (typeof n !== 'number' || n <= 0) {
+      el.hidden = true;
+      return;
+    }
+    el.innerHTML = '<strong dir="ltr">' + formatCount(n) + '</strong> ' +
+      (n === 1 ? 'סבב הושלם באתר עד היום' : 'סבבים הושלמו באתר עד היום');
+    el.hidden = false;
+  }
+
+  function countCompletedRound() {
+    $('final-global').hidden = true;
+    if (!window.Counter) return;
+    window.Counter.hit().then((n) => {
+      renderGlobalCount(n);
+      if (typeof n === 'number' && n > 0 && window.Counter.counts) {
+        $('final-global').innerHTML = 'זה הסבב ה-<strong dir="ltr">' + formatCount(n) + '</strong> שהושלם באתר';
+        $('final-global').hidden = false;
+      }
+    });
+  }
+
   // ----- Wiring -----
 
   $('start-button').addEventListener('click', () => startRound(newRound()));
@@ -447,6 +478,7 @@
     else if (state.answered && e.key === 'Enter' && document.activeElement !== $('next-button')) next();
   });
 
+  if (window.Counter) window.Counter.get().then(renderGlobalCount);
   loadSettings();
   renderLevels();
   renderTopics();
