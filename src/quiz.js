@@ -9,9 +9,9 @@
 
   const LEVELS = [
     { id: 1, label: 'יסודות', hint: 'כיתות ח׳–ט׳' },
-    { id: 2, label: '3 יח״ל', hint: 'פירוק, משוואות ריבועיות, שורשים' },
-    { id: 3, label: '4 יח״ל', hint: 'ערך מוחלט, תחום הגדרה, אי-שוויונות' },
-    { id: 4, label: '5 יח״ל', hint: 'לוגריתמים ומשוואות מעריכיות' },
+    { id: 2, label: '3 יח״ל', hint: 'בגרות' },
+    { id: 3, label: '4 יח״ל', hint: 'בגרות' },
+    { id: 4, label: '5 יח״ל', hint: 'בגרות' },
   ];
 
   // In display order. A topic is offered from its minLevel upwards.
@@ -30,6 +30,7 @@
     { key: 'inequalities', label: 'אי-שוויונות', minLevel: 3 },
     { key: 'logs', label: 'לוגריתמים', minLevel: 4 },
     { key: 'exponential', label: 'משוואות מעריכיות', minLevel: 4 },
+    { key: 'params', label: 'פרמטרים', minLevel: 4 },
   ];
 
   const TYPES = {
@@ -61,12 +62,15 @@
     return TOPICS.filter((t) => t.minLevel <= level && poolFor(level, t.key, questions).length > 0);
   }
 
-  // Weighted sampling without replacement.
-  function sample(pool, level, count, random) {
+  // Weighted sampling without replacement. `priority` (optional) scales each question's
+  // weight, e.g. to favour questions answered wrong before (see progress.js).
+  function sample(pool, level, count, random, priority) {
     const items = pool.slice();
     const picked = [];
     while (picked.length < count && items.length > 0) {
-      const weights = items.map((q) => (q.level === level ? SAME_LEVEL_WEIGHT : 1));
+      const weights = items.map(
+        (q) => (q.level === level ? SAME_LEVEL_WEIGHT : 1) * (priority ? priority(q) : 1)
+      );
       const total = weights.reduce((a, b) => a + b, 0);
       let x = random() * total;
       let i = 0;
@@ -117,13 +121,14 @@
     const random = options.random || Math.random;
     const count = options.count || ROUND_LENGTH;
     const pool = poolFor(level, topics, options.questions);
-    return vary(sample(pool, level, count, random)).map((q) => prepare(q, random));
+    return vary(sample(pool, level, count, random, options.priority)).map((q) => prepare(q, random));
   }
 
-  // Builds a round from specific questions (e.g. the ones answered wrong).
-  function roundFrom(questions, random) {
+  // Builds a round from specific questions (e.g. the ones answered wrong), at most
+  // `count` of them when given.
+  function roundFrom(questions, random, count) {
     random = random || Math.random;
-    const shuffled = sample(questions, 0, questions.length, random);
+    const shuffled = sample(questions, 0, Math.min(count || questions.length, questions.length), random);
     return vary(shuffled).map((q) => prepare(q, random));
   }
 
