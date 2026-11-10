@@ -49,9 +49,12 @@
     return t ? t.label : key;
   }
 
-  function poolFor(level, topic, questions) {
+  // topics: 'all', an empty array (also all), a topic key, or an array of topic keys.
+  function poolFor(level, topics, questions) {
     questions = questions || QUESTIONS;
-    return questions.filter((q) => q.level <= level && (topic === 'all' || q.topic === topic));
+    const all = topics === 'all' || (Array.isArray(topics) && topics.length === 0);
+    const keys = Array.isArray(topics) ? topics : [topics];
+    return questions.filter((q) => q.level <= level && (all || keys.includes(q.topic)));
   }
 
   function topicsForLevel(level, questions) {
@@ -109,11 +112,11 @@
     });
   }
 
-  function makeRound(level, topic, options) {
+  function makeRound(level, topics, options) {
     options = options || {};
     const random = options.random || Math.random;
     const count = options.count || ROUND_LENGTH;
-    const pool = poolFor(level, topic, options.questions);
+    const pool = poolFor(level, topics, options.questions);
     return vary(sample(pool, level, count, random)).map((q) => prepare(q, random));
   }
 
