@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>אלגברה בלי טעויות</title>
+    <link rel="stylesheet" href="vendor/katex/katex.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <!-- Start: level, then topic -->
+      <section id="start" class="screen">
+        <header class="hero">
+          <h1>אלגברה בלי טעויות</h1>
+          <p>שאלות אמריקאיות על חוקי האלגברה ועל הטעויות הנפוצות בהם. בלי חישובים ארוכים.</p>
+        </header>
+
+        <h2>רמה</h2>
+        <div id="level-choices" class="levels" role="group" aria-label="רמה"></div>
+
+        <h2>נושא</h2>
+        <div id="topic-choices" class="chips" role="group" aria-label="נושא"></div>
+        <p id="pool-count" class="muted"></p>
+
+        <button id="start-button" type="button" class="primary">התחילו סבב של 10 שאלות</button>
+      </section>
+
+      <!-- Play: one question at a time -->
+      <section id="play" class="screen" hidden>
+        <div class="topbar">
+          <button id="quit-button" type="button" class="icon-button" aria-label="חזרה לתפריט">✕</button>
+          <span id="progress-text"></span>
+          <span id="score-text" class="muted"></span>
+        </div>
+        <div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+
+        <article class="card">
+          <div class="tags">
+            <span id="type-tag" class="tag tag-type"></span>
+            <span id="topic-tag" class="tag"></span>
+          </div>
+          <p id="prompt" class="prompt"></p>
+          <ol id="steps" class="steps" hidden></ol>
+        </article>
+
+        <div id="options" class="options"></div>
+
+        <div id="feedback" class="feedback" role="status" aria-live="polite" hidden>
+          <p id="feedback-title" class="feedback-title"></p>
+          <p id="explanation" class="explanation"></p>
+          <button id="next-button" type="button" class="primary">לשאלה הבאה</button>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section id="results" class="screen" hidden>
+        <h1>סיכום הסבב</h1>
+        <p id="final-score" class="final-score"></p>
+        <p id="final-message" class="final-message"></p>
+        <div id="weak-section" class="card">
+          <h2>נושאים לחזור עליהם</h2>
+          <ul id="weak-topics" class="weak-topics"></ul>
+        </div>
+        <button id="retry-wrong-button" type="button" class="primary">לתרגל שוב את השאלות שטעיתי בהן</button>
+        <button id="again-button" type="button" class="secondary">סבב חדש</button>
+        <button id="menu-button" type="button" class="link-button">חזרה לבחירת רמה ונושא</button>
+      </section>
+    </main>
+
+    <script src="vendor/katex/katex.min.js"></script>
+    <script src="src/bank.js"></script>
+    <script src="src/quiz.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+</html>
