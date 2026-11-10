@@ -3,28 +3,34 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="theme-color" content="#0284c7" />
     <title>אלגברה בלי טעויות</title>
     <link rel="stylesheet" href="vendor/katex/katex.min.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app">
-      <!-- Start: level, then topic -->
+      <!-- Start: level, then topics -->
       <section id="start" class="screen">
         <header class="hero">
+          <div class="hero-symbols" aria-hidden="true">
+            <span>π</span><span>√</span><span>∑</span><span>x²</span><span>∞</span><span>÷</span><span>≠</span><span>±</span><span>f(x)</span><span>∫</span>
+          </div>
+          <div class="logo" aria-hidden="true"><i>x</i><sup>2</sup></div>
           <h1>אלגברה בלי טעויות</h1>
           <p>שאלות אמריקאיות על חוקי האלגברה ועל הטעויות הנפוצות בהם. בלי חישובים ארוכים.</p>
         </header>
 
-        <h2>רמה</h2>
+        <h2><span class="step-badge">1</span>בוחרים רמה</h2>
         <div id="level-choices" class="levels" role="group" aria-label="רמה"></div>
 
-        <h2>נושאים <span class="h2-hint">אפשר לבחור כמה</span></h2>
+        <h2><span class="step-badge">2</span>בוחרים נושאים <span class="h2-hint">אפשר לבחור כמה</span></h2>
         <div id="topic-choices" class="chips" role="group" aria-label="נושא"></div>
         <p id="pool-count" class="muted"></p>
 
-        <button id="start-button" type="button" class="primary">התחילו סבב של 10 שאלות</button>
+        <button id="start-button" type="button" class="primary">
+          התחילו סבב של 10 שאלות <span class="arrow" aria-hidden="true">←</span>
+        </button>
       </section>
 
       <!-- Play: one question at a time -->
@@ -32,11 +38,11 @@
         <div class="topbar">
           <button id="quit-button" type="button" class="icon-button" aria-label="חזרה לתפריט">✕</button>
           <span id="progress-text"></span>
-          <span id="score-text" class="muted"></span>
+          <span id="score-text" class="score-pill"></span>
         </div>
         <div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
 
-        <article class="card">
+        <article class="card question-card">
           <div class="tags">
             <span id="type-tag" class="tag tag-type"></span>
             <span id="topic-tag" class="tag"></span>
@@ -56,8 +62,13 @@
 
       <!-- Results -->
       <section id="results" class="screen" hidden>
-        <h1>סיכום הסבב</h1>
-        <p id="final-score" class="final-score"></p>
+        <h1 class="results-title">סיכום הסבב</h1>
+        <div id="score-ring" class="score-ring" role="img">
+          <div class="score-ring-inner">
+            <span id="final-score" class="final-score" dir="ltr"></span>
+            <span class="final-label">תשובות נכונות</span>
+          </div>
+        </div>
         <p id="final-message" class="final-message"></p>
         <div id="weak-section" class="card">
           <h2>נושאים לחזור עליהם</h2>
