@@ -23,7 +23,9 @@ is in Hebrew.
 
 ## Play it
 
-Open `index.html` in a web browser. It works offline, on phones and computers, with
+**https://pentelka.github.io/math-app/**
+
+Or open `index.html` in a web browser. It works offline, on phones and computers, with
 nothing to install. On a keyboard, press 1–4 to answer and Enter for the next question.
 
 Or serve the folder and open http://localhost:8000:
