@@ -1,0 +1,386 @@
+:root {
+  --bg: #f5f6fb;
+  --card: #ffffff;
+  --text: #1f2333;
+  --muted: #6b7086;
+  --border: #e2e4ee;
+  --primary: #4f46e5;
+  --primary-text: #ffffff;
+  --primary-soft: #eceafe;
+  --good: #0f9d6b;
+  --good-soft: #e3f6ee;
+  --bad: #d64545;
+  --bad-soft: #fdeaea;
+  --radius: 14px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12141c;
+    --card: #1c1f2b;
+    --text: #e8e9f0;
+    --muted: #9a9fb4;
+    --border: #2e3242;
+    --primary: #8b84ff;
+    --primary-text: #12141c;
+    --primary-soft: #2a2850;
+    --good: #3ccf91;
+    --good-soft: #173a2d;
+    --bad: #ff7b7b;
+    --bad-soft: #3d1f22;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, 'Segoe UI', Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.screen[hidden],
+[hidden] {
+  display: none !important;
+}
+
+h1 {
+  margin: 8px 0 0;
+  font-size: 1.9rem;
+}
+
+h2 {
+  margin: 10px 0 0;
+  font-size: 1.1rem;
+}
+
+.hero p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Math: always left-to-right, isolated from the Hebrew around it */
+.math {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}
+
+.katex {
+  font-size: 1.12em;
+}
+
+/* Level cards */
+.levels {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.level {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: start;
+}
+
+.level-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.level-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.level[aria-pressed='true'],
+.chip[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+/* Topic chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 14px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 0.95rem;
+}
+
+/* Buttons */
+.primary,
+.secondary {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.primary {
+  border: none;
+  background: var(--primary);
+  color: var(--primary-text);
+}
+
+.secondary {
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-weight: 600;
+  padding: 8px;
+}
+
+.icon-button {
+  border: none;
+  background: none;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  color: var(--muted);
+}
+
+/* Play */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+#progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.3s;
+}
+
+.card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tag-type {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.prompt {
+  margin: 12px 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.steps {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.steps li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.step-num {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: start;
+  font-size: 1.05rem;
+}
+
+.option:not(:disabled):hover {
+  border-color: var(--primary);
+}
+
+.option:disabled {
+  cursor: default;
+}
+
+.option-letter {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.option.correct {
+  border-color: var(--good);
+  background: var(--good-soft);
+}
+
+.option.wrong {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
+.option.correct .option-letter {
+  background: var(--good);
+  color: var(--card);
+}
+
+.option.wrong .option-letter {
+  background: var(--bad);
+  color: var(--card);
+}
+
+.feedback {
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: var(--card);
+}
+
+.feedback.good {
+  border-color: var(--good);
+}
+
+.feedback.bad {
+  border-color: var(--bad);
+}
+
+.feedback-title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.feedback.good .feedback-title {
+  color: var(--good);
+}
+
+.feedback.bad .feedback-title {
+  color: var(--bad);
+}
+
+.explanation {
+  margin: 8px 0 14px;
+}
+
+/* Results */
+.final-score {
+  margin: 0;
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-align: center;
+}
+
+.final-message {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+}
+
+.weak-topics {
+  margin: 8px 0 0;
+  padding-inline-start: 20px;
+}
+
+@media (max-width: 380px) {
+  .levels {
+    grid-template-columns: 1fr;
+  }
+}
