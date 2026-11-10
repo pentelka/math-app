@@ -7,6 +7,26 @@
   const PRAISE = ['נכון!', 'מצוין!', 'בדיוק!', 'יפה מאוד!', 'כל הכבוד!'];
   const OPTION_LETTERS = ['א', 'ב', 'ג', 'ד'];
 
+  // Small math icons (KaTeX) shown on level cards and topic chips. Decoration only.
+  const LEVEL_ICONS = { 1: 'a\\pm b', 2: 'x^2', 3: '|x|', 4: '\\log' };
+  const TOPIC_ICONS = {
+    all: '\\Sigma',
+    order: '\\pm',
+    brackets: '(\\,)',
+    powers: 'x^n',
+    shortmult: '(a{+}b)^2',
+    fractions: '\\tfrac{a}{b}',
+    linear: '=',
+    factoring: '\\times',
+    quadratic: 'x^2',
+    roots: '\\sqrt{x}',
+    abs: '|x|',
+    domain: 'x{\\in}',
+    inequalities: '<',
+    logs: '\\log',
+    exponential: 'a^x',
+  };
+
   const state = {
     level: 1,
     topics: [], // selected topic keys; empty means all topics mixed
@@ -28,6 +48,12 @@
 
   function escapeHtml(s) {
     return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+
+  function mathIcon(tex, className) {
+    if (!tex || !window.katex) return '';
+    return '<span class="' + className + '" dir="ltr" aria-hidden="true">' +
+      window.katex.renderToString(tex, { throwOnError: false }) + '</span>';
   }
 
   function rich(text) {
@@ -74,8 +100,11 @@
       btn.className = 'level';
       btn.setAttribute('aria-pressed', String(level.id === state.level));
       btn.innerHTML =
+        mathIcon(LEVEL_ICONS[level.id], 'level-icon') +
+        '<span class="level-text">' +
         '<span class="level-name">' + escapeHtml(level.label) + '</span>' +
-        '<span class="level-hint">' + escapeHtml(level.hint) + '</span>';
+        '<span class="level-hint">' + escapeHtml(level.hint) + '</span>' +
+        '</span>';
       btn.addEventListener('click', () => {
         state.level = level.id;
         renderLevels();
@@ -95,7 +124,7 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'chip';
-      btn.textContent = topic.label;
+      btn.innerHTML = mathIcon(TOPIC_ICONS[topic.key], 'chip-icon') + '<span>' + escapeHtml(topic.label) + '</span>';
       const pressed = topic.key === 'all' ? state.topics.length === 0 : state.topics.includes(topic.key);
       btn.setAttribute('aria-pressed', String(pressed));
       btn.addEventListener('click', () => toggleTopic(topic.key));
@@ -134,7 +163,7 @@
     state.answered = false;
 
     $('progress-text').textContent = 'שאלה ' + (state.index + 1) + ' מתוך ' + total;
-    $('score-text').textContent = state.results.filter((r) => r.correct).length + ' נכונות';
+    $('score-text').textContent = '✓ ' + state.results.filter((r) => r.correct).length;
     $('progress-bar').style.width = (state.index / total) * 100 + '%';
     $('type-tag').textContent = Quiz.TYPES[q.type];
     $('topic-tag').textContent = Quiz.topicLabel(q.topic);
@@ -184,7 +213,7 @@
       : 'לא נכון. התשובה הנכונה מסומנת בירוק.';
     $('explanation').innerHTML = rich(q.explanation);
     $('next-button').textContent = state.index + 1 < state.round.length ? 'לשאלה הבאה' : 'לסיכום';
-    $('score-text').textContent = state.results.filter((r) => r.correct).length + ' נכונות';
+    $('score-text').textContent = '✓ ' + state.results.filter((r) => r.correct).length;
     fb.hidden = false;
     $('next-button').focus({ preventScroll: true });
     fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -203,7 +232,9 @@
     const total = state.results.length;
     const right = state.results.filter((r) => r.correct).length;
     const ratio = total ? right / total : 0;
-    $('final-score').textContent = right + ' / ' + total;
+    $('final-score').textContent = right + '/' + total;
+    $('score-ring').style.setProperty('--p', Math.round(ratio * 100));
+    $('score-ring').setAttribute('aria-label', right + ' תשובות נכונות מתוך ' + total);
     $('final-message').textContent =
       ratio === 1 ? 'מושלם! אף טעות.' :
       ratio >= 0.8 ? 'מצוין! כמעט בלי טעויות.' :
