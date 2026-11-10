@@ -103,6 +103,25 @@ test('makeRound returns 10 distinct questions within level and topic', () => {
   }
 });
 
+test('several topics: the pool is their union and a round stays inside it', () => {
+  const random = seeded(11);
+  const topics = ['logs', 'powers', 'abs'];
+  const pool = Quiz.poolFor(4, topics);
+  const expected = topics.map((t) => Quiz.poolFor(4, t).length).reduce((a, b) => a + b, 0);
+  assert.equal(pool.length, expected);
+  for (let i = 0; i < 50; i++) {
+    const round = Quiz.makeRound(4, topics, { random });
+    assert.equal(round.length, 10);
+    for (const q of round) assert.ok(topics.includes(q.topic), q.topic);
+  }
+});
+
+test('an empty topic list means all topics', () => {
+  for (const id of LEVEL_IDS) {
+    assert.equal(Quiz.poolFor(id, []).length, Quiz.poolFor(id, 'all').length);
+  }
+});
+
 test('a mixed round is mostly from the chosen level and mixes question types', () => {
   const random = seeded(3);
   let sameLevel = 0;

@@ -9,7 +9,7 @@
 
   const state = {
     level: 1,
-    topic: 'all',
+    topics: [], // selected topic keys; empty means all topics mixed
     round: [],
     index: 0,
     results: [],
@@ -49,7 +49,7 @@
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       if (Quiz.LEVELS.some((l) => l.id === saved.level)) state.level = saved.level;
-      if (saved.topic) state.topic = saved.topic;
+      if (Array.isArray(saved.topics)) state.topics = saved.topics.filter((t) => typeof t === 'string');
     } catch (e) {
       /* storage unavailable: use defaults */
     }
@@ -57,7 +57,7 @@
 
   function saveSettings() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: state.level, topic: state.topic }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ level: state.level, topics: state.topics }));
     } catch (e) {
       /* ignore */
     }
@@ -87,7 +87,8 @@
 
   function renderTopics() {
     const topics = Quiz.topicsForLevel(state.level);
-    if (state.topic !== 'all' && !topics.some((t) => t.key === state.topic)) state.topic = 'all';
+    // Drop selections that this level doesn't offer.
+    state.topics = state.topics.filter((key) => topics.some((t) => t.key === key));
     const box = $('topic-choices');
     box.innerHTML = '';
     [{ key: 'all', label: 'הכול מעורבב' }].concat(topics).forEach((topic) => {
@@ -95,15 +96,25 @@
       btn.type = 'button';
       btn.className = 'chip';
       btn.textContent = topic.label;
-      btn.setAttribute('aria-pressed', String(topic.key === state.topic));
-      btn.addEventListener('click', () => {
-        state.topic = topic.key;
-        renderTopics();
-      });
+      const pressed = topic.key === 'all' ? state.topics.length === 0 : state.topics.includes(topic.key);
+      btn.setAttribute('aria-pressed', String(pressed));
+      btn.addEventListener('click', () => toggleTopic(topic.key));
       box.appendChild(btn);
     });
-    const count = Quiz.poolFor(state.level, state.topic).length;
-    $('pool-count').textContent = count + ' שאלות במאגר';
+    const count = Quiz.poolFor(state.level, state.topics).length;
+    const chosen = state.topics.length;
+    $('pool-count').textContent =
+      (chosen === 0 ? 'כל הנושאים' : chosen === 1 ? 'נושא אחד נבחר' : chosen + ' נושאים נבחרו') +
+      ' · ' + count + ' שאלות במאגר';
+  }
+
+  // "הכול מעורבב" clears the selection; choosing a topic adds or removes it.
+  // Removing the last selected topic goes back to all topics.
+  function toggleTopic(key) {
+    if (key === 'all') state.topics = [];
+    else if (state.topics.includes(key)) state.topics = state.topics.filter((k) => k !== key);
+    else state.topics = state.topics.concat(key);
+    renderTopics();
   }
 
   // ----- Play screen -----
@@ -214,8 +225,8 @@
 
   // ----- Wiring -----
 
-  $('start-button').addEventListener('click', () => startRound(Quiz.makeRound(state.level, state.topic)));
-  $('again-button').addEventListener('click', () => startRound(Quiz.makeRound(state.level, state.topic)));
+  $('start-button').addEventListener('click', () => startRound(Quiz.makeRound(state.level, state.topics)));
+  $('again-button').addEventListener('click', () => startRound(Quiz.makeRound(state.level, state.topics)));
   $('retry-wrong-button').addEventListener('click', () => {
     const wrong = state.results.filter((r) => !r.correct).map((r) => r.question);
     startRound(Quiz.roundFrom(wrong));
