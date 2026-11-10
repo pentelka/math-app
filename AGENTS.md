@@ -46,4 +46,9 @@ and computers, with no build step and no dependencies.
   `<span class="math" dir="ltr">`.
 - No ads, tracking or accounts. Settings and progress stay in `localStorage`, wrapped in
   try/catch. The round counter sends nothing personal, only "one more round".
+- **Every release that changes files the page loads:** run `npm run bump` (or
+  `npm run bump -- 1.2.0`). It updates the version in `package.json`, the
+  `<meta name="app-version">` and the `?v=` on every local script and stylesheet, so phones
+  fetch fresh files and open tabs show the "יש גרסה חדשה" banner. `tests/version.test.js`
+  fails if they disagree.
 - Run `npm test` before committing.

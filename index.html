@@ -7,11 +7,18 @@
     <!-- The page has its own light and dark themes; stops browsers (e.g. Samsung Internet,
          Chrome on Android) from force-darkening it. -->
     <meta name="color-scheme" content="light dark" />
+    <!-- Bumped on every release (npm run bump); app.js compares it with the live page. -->
+    <meta name="app-version" content="1.1.0" />
     <title>אלגברה בלי טעויות</title>
-    <link rel="stylesheet" href="vendor/katex/katex.min.css" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="vendor/katex/katex.min.css?v=1.1.0" />
+    <link rel="stylesheet" href="styles.css?v=1.1.0" />
   </head>
   <body>
+    <div id="update-banner" class="update-banner" role="status" hidden>
+      <span>יש גרסה חדשה של האתר</span>
+      <button id="update-button" type="button">לרענון</button>
+    </div>
+
     <main class="app">
       <!-- Start: level, then topics -->
       <section id="start" class="screen">
@@ -52,6 +59,14 @@
           <button id="stats-back-button" type="button" class="icon-button" aria-label="חזרה">→</button>
           <h1 class="stats-title">ההתקדמות שלי</h1>
           <span></span>
+        </div>
+
+        <div id="stats-global" class="card global-card" hidden>
+          <span class="global-icon" aria-hidden="true">∑</span>
+          <span class="global-text">
+            <strong id="stats-global-num" dir="ltr"></strong>
+            <span id="stats-global-label"></span>
+          </span>
         </div>
 
         <div id="stats-empty" class="card empty-state">
@@ -136,11 +151,11 @@
       </section>
     </main>
 
-    <script src="vendor/katex/katex.min.js"></script>
-    <script src="src/bank.js"></script>
-    <script src="src/quiz.js"></script>
-    <script src="src/progress.js"></script>
-    <script src="src/counter.js"></script>
-    <script src="src/app.js"></script>
+    <script src="vendor/katex/katex.min.js?v=1.1.0"></script>
+    <script src="src/bank.js?v=1.1.0"></script>
+    <script src="src/quiz.js?v=1.1.0"></script>
+    <script src="src/progress.js?v=1.1.0"></script>
+    <script src="src/counter.js?v=1.1.0"></script>
+    <script src="src/app.js?v=1.1.0"></script>
   </body>
 </html>

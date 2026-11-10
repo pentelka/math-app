@@ -938,3 +938,65 @@ button:focus-visible {
 .final-global strong {
   color: var(--primary-strong);
 }
+
+/* ----- Total for everyone, on the progress screen ----- */
+.global-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.global-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: var(--primary-text);
+  font-family: var(--math-font);
+  font-size: 1.4rem;
+}
+
+.global-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.global-text strong {
+  font-family: var(--math-font);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: var(--primary-strong);
+}
+
+.global-text span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+/* ----- "New version" banner ----- */
+.update-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: var(--primary-text);
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+.update-banner button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--primary-strong);
+  font-weight: 800;
+}
