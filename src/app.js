@@ -49,7 +49,10 @@
 
   function show(name) {
     if (name === 'start') renderStatsCard();
-    if (name === 'stats') renderStats();
+    if (name === 'stats') {
+      renderStats();
+      refreshGlobalCount();
+    }
     Object.entries(screens).forEach(([key, el]) => (el.hidden = key !== name));
     window.scrollTo(0, 0);
   }
@@ -422,16 +425,64 @@
     return n.toLocaleString('he-IL');
   }
 
+  let globalCount = null; // last known total, null when the service is unavailable
+
+  // Shown on the start screen and the progress screen, including when it is still 0.
   function renderGlobalCount(n) {
+    if (typeof n === 'number') globalCount = n;
     const el = $('global-count');
-    if (typeof n !== 'number' || n <= 0) {
+    const card = $('stats-global');
+    if (typeof globalCount !== 'number') {
       el.hidden = true;
+      card.hidden = true;
       return;
     }
-    el.innerHTML = '<strong dir="ltr">' + formatCount(n) + '</strong> ' +
-      (n === 1 ? 'סבב הושלם באתר עד היום' : 'סבבים הושלמו באתר עד היום');
+    el.innerHTML = '<strong dir="ltr">' + formatCount(globalCount) + '</strong> ' +
+      (globalCount === 1 ? 'סבב הושלם באתר עד היום' : 'סבבים הושלמו באתר עד היום');
     el.hidden = false;
+
+    $('stats-global-num').textContent = formatCount(globalCount);
+    $('stats-global-label').textContent =
+      (globalCount === 1 ? 'סבב הושלם' : 'סבבים הושלמו') + ' באתר עד היום, אצל כל המשתמשים';
+    card.hidden = false;
   }
+
+  function refreshGlobalCount() {
+    if (window.Counter) window.Counter.get().then(renderGlobalCount);
+  }
+
+  // ----- New version check -----
+  // Phones often keep an old copy of the page (cache, or a frozen tab). When the page
+  // becomes visible again, compare our version with the live index.html and offer a reload.
+
+  const APP_VERSION = (document.querySelector('meta[name="app-version"]') || {}).content;
+  let lastUpdateCheck = 0;
+
+  function checkForUpdate() {
+    if (!APP_VERSION || typeof fetch !== 'function' || location.protocol === 'file:') return;
+    const now = Date.now();
+    if (now - lastUpdateCheck < 60 * 1000) return;
+    lastUpdateCheck = now;
+    fetch('index.html?check=' + now, { cache: 'no-store' })
+      .then((res) => (res.ok ? res.text() : ''))
+      .then((html) => {
+        const m = html.match(/<meta name="app-version" content="([^"]+)"/);
+        if (m && m[1] !== APP_VERSION) $('update-banner').hidden = false;
+      })
+      .catch(() => {});
+  }
+
+  $('update-button').addEventListener('click', () => location.reload());
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      checkForUpdate();
+      refreshGlobalCount();
+    }
+  });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) checkForUpdate(); // restored from the back/forward cache
+  });
+  setTimeout(checkForUpdate, 2000);
 
   function countCompletedRound() {
     $('final-global').hidden = true;
@@ -478,7 +529,7 @@
     else if (state.answered && e.key === 'Enter' && document.activeElement !== $('next-button')) next();
   });
 
-  if (window.Counter) window.Counter.get().then(renderGlobalCount);
+  refreshGlobalCount();
   loadSettings();
   renderLevels();
   renderTopics();

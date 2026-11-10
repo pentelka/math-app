@@ -1,10 +1,11 @@
 {
   "name": "math-app",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Multiple-choice practice on algebra rules and common mistakes, up to 5-unit Bagrut level.",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "start": "python3 -m http.server 8000"
+    "start": "python3 -m http.server 8000",
+    "bump": "node scripts/bump-version.js"
   }
 }
