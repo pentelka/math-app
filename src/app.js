@@ -3,6 +3,8 @@
   'use strict';
 
   const Quiz = window.Quiz;
+  const Progress = window.Progress;
+  let progress = Progress.load();
   const STORAGE_KEY = 'algebra-quiz-settings';
   const PRAISE = ['נכון!', 'מצוין!', 'בדיוק!', 'יפה מאוד!', 'כל הכבוד!'];
   const OPTION_LETTERS = ['א', 'ב', 'ג', 'ד'];
@@ -34,12 +36,15 @@
     index: 0,
     results: [],
     answered: false,
+    kind: 'normal', // 'normal' | 'retry' (this round's mistakes) | 'mistakes' (saved mistakes)
   };
 
   const $ = (id) => document.getElementById(id);
-  const screens = { start: $('start'), play: $('play'), results: $('results') };
+  const screens = { start: $('start'), stats: $('stats'), play: $('play'), results: $('results') };
 
   function show(name) {
+    if (name === 'start') renderStatsCard();
+    if (name === 'stats') renderStats();
     Object.entries(screens).forEach(([key, el]) => (el.hidden = key !== name));
     window.scrollTo(0, 0);
   }
@@ -148,7 +153,12 @@
 
   // ----- Play screen -----
 
-  function startRound(round) {
+  function newRound() {
+    return Quiz.makeRound(state.level, state.topics, { priority: (q) => Progress.priority(progress, q.id) });
+  }
+
+  function startRound(round, kind) {
+    state.kind = kind || 'normal';
     state.round = round;
     state.index = 0;
     state.results = [];
@@ -198,6 +208,8 @@
     const q = state.round[state.index];
     const correct = i === q.answer;
     state.results.push({ question: q, correct });
+    Progress.recordAnswer(progress, q.id, correct, Date.now());
+    Progress.save(progress);
 
     const buttons = $('options').querySelectorAll('.option');
     buttons.forEach((btn, j) => {
@@ -232,6 +244,8 @@
     const total = state.results.length;
     const right = state.results.filter((r) => r.correct).length;
     const ratio = total ? right / total : 0;
+    Progress.recordRound(progress, { level: state.level, topics: state.topics, right, total, kind: state.kind }, Date.now());
+    Progress.save(progress);
     $('final-score').textContent = right + '/' + total;
     $('score-ring').style.setProperty('--p', Math.round(ratio * 100));
     $('score-ring').setAttribute('aria-label', right + ' תשובות נכונות מתוך ' + total);
@@ -254,13 +268,115 @@
     show('results');
   }
 
+  // ----- Progress -----
+
+  function percent(x) {
+    return Math.round(x * 100) + '%';
+  }
+
+  function daysText(n) {
+    return n === 1 ? 'יום אחד' : n + ' ימים';
+  }
+
+  function answersText(n) {
+    return n === 1 ? 'תשובה אחת' : n + ' תשובות';
+  }
+
+  function renderStatsCard() {
+    const t = Progress.totals(progress);
+    const streak = Progress.streak(progress, Date.now());
+    const mistakes = Progress.mistakes(progress, Quiz.QUESTIONS).length;
+    $('stats-summary').textContent = t.answers === 0
+      ? 'עוד לא התחלת. ההתקדמות תישמר כאן אוטומטית.'
+      : [
+          answersText(t.answers),
+          percent(t.accuracy) + ' דיוק',
+          streak > 0 ? daysText(streak) + ' ברצף' : null,
+          mistakes === 1 ? 'טעות אחת לתרגול' : mistakes > 1 ? mistakes + ' טעויות לתרגול' : null,
+        ].filter(Boolean).join(' · ');
+  }
+
+  function renderStats() {
+    const t = Progress.totals(progress);
+    const empty = t.answers === 0;
+    $('stats-empty').hidden = !empty;
+    $('stats-body').hidden = empty;
+    if (empty) return;
+
+    $('tile-answers').textContent = t.answers;
+    $('tile-accuracy').textContent = percent(t.accuracy);
+    $('tile-rounds').textContent = t.rounds;
+    $('tile-streak').textContent = Progress.streak(progress, Date.now());
+
+    const mistakes = Progress.mistakes(progress, Quiz.QUESTIONS).length;
+    const mb = $('mistakes-button');
+    mb.hidden = mistakes === 0;
+    mb.textContent = 'לתרגל את הטעויות שלי (' + mistakes + ')';
+
+    const list = $('topic-progress');
+    list.innerHTML = '';
+    Quiz.TOPICS.forEach((topic) => {
+      const st = Progress.topicStats(progress, Quiz.QUESTIONS, topic.key);
+      const share = st.total ? st.mastered / st.total : 0;
+      const li = document.createElement('li');
+      li.className = 'topic-row' + (st.seen === 0 ? ' untouched' : '') + (share === 1 ? ' complete' : '');
+      li.innerHTML =
+        mathIcon(TOPIC_ICONS[topic.key], 'chip-icon') +
+        '<div class="topic-row-main">' +
+          '<div class="topic-row-head">' +
+            '<span class="topic-row-label">' + escapeHtml(topic.label) + '</span>' +
+            '<span class="topic-row-count" dir="ltr">' + st.mastered + '/' + st.total + '</span>' +
+          '</div>' +
+          '<div class="bar"><div class="bar-fill" style="width:' + Math.round(share * 100) + '%"></div></div>' +
+          '<span class="topic-row-sub">' +
+            (st.seen === 0 ? 'עוד לא תרגלת' : 'דיוק ' + percent(st.correct / st.answers) + ' · ' + answersText(st.answers)) +
+          '</span>' +
+        '</div>';
+      list.appendChild(li);
+    });
+
+    const recent = $('recent-rounds');
+    recent.innerHTML = '';
+    const rounds = progress.rounds.slice(-8).reverse();
+    if (rounds.length === 0) {
+      recent.innerHTML = '<li class="muted">עוד לא הושלם סבב.</li>';
+    }
+    rounds.forEach((r) => {
+      const level = Quiz.LEVELS.find((l) => l.id === r.level);
+      const what =
+        r.kind === 'mistakes' ? 'תרגול הטעויות שלי' :
+        r.kind === 'retry' ? 'חזרה על טעויות הסבב' :
+        (level ? level.label : '') + ' · ' +
+          (r.topics && r.topics.length ? (r.topics.length === 1 ? Quiz.topicLabel(r.topics[0]) : r.topics.length + ' נושאים') : 'כל הנושאים');
+      const date = new Date(r.t).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+      const li = document.createElement('li');
+      li.innerHTML =
+        '<span class="round-date">' + escapeHtml(date) + '</span>' +
+        '<span class="round-what">' + escapeHtml(what) + '</span>' +
+        '<span class="round-score" dir="ltr">' + r.right + '/' + r.total + '</span>';
+      recent.appendChild(li);
+    });
+  }
+
   // ----- Wiring -----
 
-  $('start-button').addEventListener('click', () => startRound(Quiz.makeRound(state.level, state.topics)));
-  $('again-button').addEventListener('click', () => startRound(Quiz.makeRound(state.level, state.topics)));
+  $('start-button').addEventListener('click', () => startRound(newRound()));
+  $('again-button').addEventListener('click', () => startRound(newRound()));
   $('retry-wrong-button').addEventListener('click', () => {
     const wrong = state.results.filter((r) => !r.correct).map((r) => r.question);
-    startRound(Quiz.roundFrom(wrong));
+    startRound(Quiz.roundFrom(wrong), 'retry');
+  });
+  $('stats-card').addEventListener('click', () => show('stats'));
+  $('stats-back-button').addEventListener('click', () => show('start'));
+  $('mistakes-button').addEventListener('click', () => {
+    const wrong = Progress.mistakes(progress, Quiz.QUESTIONS);
+    if (wrong.length) startRound(Quiz.roundFrom(wrong, undefined, Quiz.ROUND_LENGTH), 'mistakes');
+  });
+  $('reset-button').addEventListener('click', () => {
+    if (window.confirm('למחוק את כל ההתקדמות השמורה? אי אפשר לבטל את זה.')) {
+      progress = Progress.clear();
+      renderStats();
+    }
   });
   $('menu-button').addEventListener('click', () => show('start'));
   $('quit-button').addEventListener('click', () => show('start'));

@@ -21,6 +21,15 @@
           <p>שאלות אמריקאיות על חוקי האלגברה ועל הטעויות הנפוצות בהם. בלי חישובים ארוכים.</p>
         </header>
 
+        <button id="stats-card" type="button" class="stats-card">
+          <span class="stats-card-icon" aria-hidden="true">%</span>
+          <span class="stats-card-text">
+            <span class="stats-card-title">ההתקדמות שלי</span>
+            <span id="stats-summary" class="stats-card-summary"></span>
+          </span>
+          <span class="arrow" aria-hidden="true">←</span>
+        </button>
+
         <h2><span class="step-badge">1</span>בוחרים רמה</h2>
         <div id="level-choices" class="levels" role="group" aria-label="רמה"></div>
 
@@ -31,6 +40,44 @@
         <button id="start-button" type="button" class="primary">
           התחילו סבב של 10 שאלות <span class="arrow" aria-hidden="true">←</span>
         </button>
+      </section>
+
+      <!-- Progress over time (saved in this browser) -->
+      <section id="stats" class="screen" hidden>
+        <div class="topbar">
+          <button id="stats-back-button" type="button" class="icon-button" aria-label="חזרה">→</button>
+          <h1 class="stats-title">ההתקדמות שלי</h1>
+          <span></span>
+        </div>
+
+        <div id="stats-empty" class="card empty-state">
+          <p>עוד אין התקדמות שמורה. אחרי הסבב הראשון תופיע כאן התמונה המלאה: כמה ענית, מה הדיוק, ובאילו נושאים כבר שולטים.</p>
+        </div>
+
+        <div id="stats-body">
+          <div class="tiles">
+            <div class="tile"><span id="tile-answers" class="tile-value"></span><span class="tile-label">תשובות</span></div>
+            <div class="tile"><span id="tile-accuracy" class="tile-value"></span><span class="tile-label">דיוק</span></div>
+            <div class="tile"><span id="tile-rounds" class="tile-value"></span><span class="tile-label">סבבים</span></div>
+            <div class="tile"><span id="tile-streak" class="tile-value"></span><span class="tile-label">ימים ברצף</span></div>
+          </div>
+
+          <button id="mistakes-button" type="button" class="primary"></button>
+
+          <div class="card">
+            <h2>שליטה לפי נושא</h2>
+            <p class="muted">כמה מהשאלות בנושא ענית נכון בפעם האחרונה.</p>
+            <ul id="topic-progress" class="topic-progress"></ul>
+          </div>
+
+          <div class="card">
+            <h2>סבבים אחרונים</h2>
+            <ul id="recent-rounds" class="recent-rounds"></ul>
+          </div>
+
+          <p class="muted storage-note">ההתקדמות נשמרת רק בדפדפן הזה, במכשיר הזה. מחיקת נתוני הגלישה תמחק גם אותה.</p>
+          <button id="reset-button" type="button" class="link-button danger">איפוס ההתקדמות</button>
+        </div>
       </section>
 
       <!-- Play: one question at a time -->
@@ -83,6 +130,7 @@
     <script src="vendor/katex/katex.min.js"></script>
     <script src="src/bank.js"></script>
     <script src="src/quiz.js"></script>
+    <script src="src/progress.js"></script>
     <script src="src/app.js"></script>
   </body>
 </html>

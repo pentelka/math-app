@@ -10,6 +10,10 @@ and computers, with no build step and no dependencies.
 - `src/bank.js`: the question bank. Most content work happens here.
 - `src/quiz.js`: levels, topics, question types, round building and answer shuffling.
   Pure logic, no DOM.
+- `src/progress.js`: progress over time in `localStorage` (answers per question, rounds,
+  practice days) and the priority that makes wrong or unseen questions likelier. Pure
+  functions take `now`; only `load`/`save`/`clear` touch storage, and they never throw.
+  If the stored shape changes, bump `version` and the storage key.
 - `src/app.js`: screens, input and rendering text with `$math$`.
 - `vendor/katex/`: KaTeX 0.16.11 (MIT), vendored so the app works offline. Only the
   woff2 fonts are included.
@@ -36,5 +40,6 @@ and computers, with no build step and no dependencies.
   modules, no bundler, no CDNs or network calls.
 - The interface text is Hebrew. Math is always rendered left-to-right inside
   `<span class="math" dir="ltr">`.
-- No ads, tracking or accounts. Settings stay in `localStorage`, wrapped in try/catch.
+- No ads, tracking or accounts. Settings and progress stay in `localStorage`, wrapped in
+  try/catch, and nothing leaves the device.
 - Run `npm test` before committing.

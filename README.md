@@ -19,6 +19,11 @@ is in Hebrew.
   what the correct version is.
 - **Rounds of 10.** At the end you get your score, the topics you got wrong, and a
   button to practise just the questions you missed.
+- **Progress saved over time** in the browser: answers, accuracy, rounds, days in a
+  row, mastery per topic and recent rounds. Questions answered wrong, or not yet
+  seen, come up more often. A "practise my mistakes" round collects the questions
+  whose last answer was wrong. Progress stays on that device and browser only, with
+  no account.
 - No calculations that need pen and paper.
 
 ## Play it
