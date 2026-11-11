@@ -427,6 +427,9 @@
 
   // Last known public totals; null while unknown (service not reached yet on this device).
   const publicCounts = { rounds: null, users: null };
+  // The user count is for the site owner only: it is shown only when the page is opened
+  // with ?owner. This hides it from regular visitors; it is not a secret (the code is public).
+  const OWNER_VIEW = /[?&]owner\b/.test(location.search);
 
   function renderGlobalCount(n) {
     if (typeof n === 'number') publicCounts.rounds = n;
@@ -442,7 +445,7 @@
   function renderPublicCounts() {
     const { rounds, users } = publicCounts;
     const hasRounds = typeof rounds === 'number';
-    const hasUsers = typeof users === 'number';
+    const hasUsers = OWNER_VIEW && typeof users === 'number';
     const el = $('global-count');
     const card = $('stats-global');
     if (!hasRounds && !hasUsers) {
@@ -453,7 +456,7 @@
     const parts = [];
     if (hasUsers) parts.push('<strong dir="ltr">' + formatCount(users) + '</strong> ' + (users === 1 ? 'משתמש' : 'משתמשים'));
     if (hasRounds) parts.push('<strong dir="ltr">' + formatCount(rounds) + '</strong> ' + (rounds === 1 ? 'סבב הושלם' : 'סבבים הושלמו'));
-    el.innerHTML = parts.join(' · ');
+    el.innerHTML = parts.join(' · ') + (hasUsers ? '' : ' באתר עד היום');
     el.hidden = false;
 
     $('stats-users').hidden = !hasUsers;
