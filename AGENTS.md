@@ -16,7 +16,9 @@ and computers, with no build step and no dependencies.
   If the stored shape changes, bump `version` and the storage key.
 - `src/counter.js`: the public count of completed rounds, stored in the anonymous Abacus
   counter service. Only `pentelka.github.io` increments it; everything else only reads.
-  Failures resolve to `null` and the number is hidden.
+  The service can be slow, so the last total is remembered on the device and shown at
+  once, and a round that can't be sent stays pending in `localStorage` and is sent on a
+  later visit (one send at a time, so nothing is sent twice by the page).
 - `src/app.js`: screens, input and rendering text with `$math$`.
 - `vendor/katex/`: KaTeX 0.16.11 (MIT), vendored so the app works offline. Only the
   woff2 fonts are included.

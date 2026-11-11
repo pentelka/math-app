@@ -2,54 +2,142 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Counter = require('../src/counter.js');
 
-function fakeFetch(handler) {
-  const calls = [];
-  const fn = async (url) => {
-    calls.push(url);
-    return handler(url);
+const LIVE = 'pentelka.github.io';
+
+function memoryStorage(initial) {
+  const data = Object.assign({}, initial);
+  return {
+    getItem: (k) => (k in data ? data[k] : null),
+    setItem: (k, v) => {
+      data[k] = String(v);
+    },
+    data,
   };
-  fn.calls = calls;
-  return fn;
 }
 
 const json = (status, body) => ({ status, ok: status >= 200 && status < 300, json: async () => body });
 
-test('on the live site, hit increments and returns the new total', async () => {
-  const fetch = fakeFetch(() => json(200, { value: 42 }));
-  const c = Counter.make({ fetch, hostname: 'pentelka.github.io', search: '' });
-  assert.equal(await c.hit(), 42);
-  assert.match(fetch.calls[0], /\/hit\/pentelka-math-app\/rounds-completed$/);
+// A fake counter service holding a real total. `up` can be switched off to simulate an outage.
+function fakeService(start) {
+  const svc = { total: start, up: true, calls: [] };
+  svc.fetch = async (url) => {
+    svc.calls.push(url.replace(Counter.BASE, ''));
+    if (!svc.up) throw new Error('timeout');
+    if (url.includes('/hit/')) svc.total++;
+    return svc.total === 0 && url.includes('/get/') ? json(404, { error: 'Key not found' }) : json(200, { value: svc.total });
+  };
+  return svc;
+}
+
+const state = (storage) => JSON.parse(storage.getItem(Counter.STORAGE_KEY) || '{}');
+
+test('on the live site, a round is sent at once and the new total is returned', async () => {
+  const svc = fakeService(41);
+  const storage = memoryStorage();
+  const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage });
+  assert.deepEqual(await c.hit(), { total: 42, sent: true });
+  assert.equal(svc.total, 42);
+  assert.deepEqual(state(storage), { last: 42, pending: 0 });
+  assert.match(svc.calls[0], /^\/hit\/pentelka-math-app\/rounds-completed$/);
 });
 
-test('elsewhere (local file, localhost, tests), hit only reads', async () => {
+test('when the service is down, the round waits on the device and the shown total still grows', async () => {
+  const svc = fakeService(10);
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 10, pending: 0 }) });
+  const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage });
+  svc.up = false;
+  assert.deepEqual(await c.hit(), { total: 11, sent: false });
+  assert.equal(svc.total, 10, 'nothing reached the service');
+  assert.deepEqual(state(storage), { last: 10, pending: 1 });
+  assert.equal(c.cached(), 11);
+});
+
+test('pending rounds are sent on a later visit, from several devices that were offline at different times', async () => {
+  const svc = fakeService(100);
+  svc.up = false;
+  const phone = memoryStorage();
+  const laptop = memoryStorage();
+  const onPhone = () => Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage: phone });
+  const onLaptop = () => Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage: laptop });
+
+  await onPhone().hit();
+  await onPhone().hit();
+  await onLaptop().hit();
+  assert.equal(svc.total, 100);
+
+  svc.up = true;
+  assert.equal(await onLaptop().refresh(), 101, 'laptop comes back first');
+  assert.equal(await onPhone().refresh(), 103, 'phone comes back later and adds its two');
+  assert.equal(svc.total, 103);
+  assert.equal(state(phone).pending, 0);
+  assert.equal(state(laptop).pending, 0);
+});
+
+test('concurrent refreshes never send the same pending round twice', async () => {
+  const svc = fakeService(5);
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 5, pending: 2 }) });
+  const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage });
+  await Promise.all([c.refresh(), c.refresh(), c.refresh()]);
+  assert.equal(svc.total, 7);
+  assert.equal(state(storage).pending, 0);
+});
+
+test('cached() shows the last known total immediately, before any request', () => {
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 6, pending: 1 }) });
+  const c = Counter.make({ fetch: async () => { throw new Error('should not be called'); }, hostname: LIVE, storage });
+  assert.equal(c.cached(), 7);
+  assert.equal(Counter.make({ fetch: null, hostname: LIVE, storage: memoryStorage() }).cached(), null);
+});
+
+test('elsewhere (local file, localhost), hit only reads and never queues', async () => {
   for (const hostname of ['', 'localhost', '127.0.0.1']) {
-    const fetch = fakeFetch(() => json(200, { value: 7 }));
-    const c = Counter.make({ fetch, hostname, search: '' });
-    assert.equal(await c.hit(), 7);
-    assert.match(fetch.calls[0], /\/get\//, hostname);
+    const svc = fakeService(7);
+    const storage = memoryStorage();
+    const c = Counter.make({ fetch: svc.fetch, hostname, search: '', storage });
+    assert.deepEqual(await c.hit(), { total: 7, sent: false });
+    assert.ok(svc.calls.every((u) => u.startsWith('/get/')), hostname);
+    assert.equal(state(storage).pending || 0, 0);
   }
 });
 
 test('a counter that does not exist yet reads as 0', async () => {
-  const c = Counter.make({ fetch: fakeFetch(() => json(404, { error: 'Key not found' })), hostname: '' });
-  assert.equal(await c.get(), 0);
+  const svc = fakeService(0);
+  const c = Counter.make({ fetch: svc.fetch, hostname: '', storage: memoryStorage() });
+  assert.equal(await c.refresh(), 0);
 });
 
-test('failures resolve to null and never throw', async () => {
-  const down = Counter.make({ fetch: fakeFetch(() => json(500, {})), hostname: 'pentelka.github.io' });
-  assert.equal(await down.hit(), null);
-  const offline = Counter.make({ fetch: async () => { throw new Error('offline'); }, hostname: 'pentelka.github.io' });
-  assert.equal(await offline.hit(), null);
-  const garbage = Counter.make({ fetch: fakeFetch(() => json(200, { nope: 1 })), hostname: '' });
-  assert.equal(await garbage.get(), null);
-  const noFetch = Counter.make({ fetch: null, hostname: 'pentelka.github.io' });
-  assert.equal(await noFetch.hit(), null);
+test('?counter=off disables everything', async () => {
+  const svc = fakeService(1);
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 9, pending: 0 }) });
+  const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '?counter=off', storage });
+  assert.deepEqual(await c.hit(), { total: null, sent: false });
+  assert.equal(await c.refresh(), null);
+  assert.equal(c.cached(), null);
+  assert.equal(svc.calls.length, 0);
 });
 
-test('?counter=off disables all requests', async () => {
-  const fetch = fakeFetch(() => json(200, { value: 1 }));
-  const c = Counter.make({ fetch, hostname: 'pentelka.github.io', search: '?counter=off' });
-  assert.equal(await c.hit(), null);
-  assert.equal(await c.get(), null);
-  assert.equal(fetch.calls.length, 0);
+test('bad responses, missing fetch and broken storage never throw', async () => {
+  const garbage = Counter.make({ fetch: async () => json(200, { nope: 1 }), hostname: LIVE, storage: memoryStorage() });
+  assert.deepEqual(await garbage.hit(), { total: null, sent: false });
+  const noFetch = Counter.make({ fetch: null, hostname: LIVE, storage: memoryStorage() });
+  assert.deepEqual(await noFetch.hit(), { total: null, sent: false });
+  const broken = {
+    getItem: () => { throw new Error('denied'); },
+    setItem: () => { throw new Error('denied'); },
+  };
+  const svc = fakeService(3);
+  const noStorage = Counter.make({ fetch: svc.fetch, hostname: LIVE, storage: broken });
+  await noStorage.hit();
+  assert.equal(svc.total, 4, 'still counts the round when it can be sent right away');
+  const corrupted = memoryStorage({ [Counter.STORAGE_KEY]: '{not json' });
+  assert.equal(Counter.make({ fetch: null, hostname: LIVE, storage: corrupted }).cached(), null);
+});
+
+test('the queue on one device is capped', async () => {
+  const svc = fakeService(0);
+  svc.up = false;
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 0, pending: 9999 }) });
+  const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, storage });
+  await c.hit();
+  assert.equal(state(storage).pending, Counter.MAX_PENDING);
 });
