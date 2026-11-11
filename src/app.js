@@ -501,6 +501,16 @@
   }
 
   $('update-button').addEventListener('click', () => location.reload());
+
+  // Leaving the page (switching app, closing the tab): send anything still queued. The sends
+  // use keepalive, so the browser completes them after the page is gone.
+  function flushCounters() {
+    if (window.Counter) window.Counter.flush();
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flushCounters();
+  });
+  window.addEventListener('pagehide', flushCounters);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       checkForUpdate();
