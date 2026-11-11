@@ -447,8 +447,12 @@
     card.hidden = false;
   }
 
+  // Shows the last known total at once, then sends this device's pending rounds and
+  // updates from the service when (and if) it answers.
   function refreshGlobalCount() {
-    if (window.Counter) window.Counter.get().then(renderGlobalCount);
+    if (!window.Counter) return;
+    renderGlobalCount(window.Counter.cached());
+    window.Counter.refresh().then(renderGlobalCount);
   }
 
   // ----- New version check -----
@@ -487,10 +491,12 @@
   function countCompletedRound() {
     $('final-global').hidden = true;
     if (!window.Counter) return;
-    window.Counter.hit().then((n) => {
-      renderGlobalCount(n);
-      if (typeof n === 'number' && n > 0 && window.Counter.counts) {
-        $('final-global').innerHTML = 'זה הסבב ה-<strong dir="ltr">' + formatCount(n) + '</strong> שהושלם באתר';
+    window.Counter.hit().then(({ total, sent }) => {
+      renderGlobalCount(total);
+      // Only claim a position when the service confirmed this round; otherwise the round
+      // waits on the device and is sent on a later visit.
+      if (sent && typeof total === 'number' && total > 0) {
+        $('final-global').innerHTML = 'זה הסבב ה-<strong dir="ltr">' + formatCount(total) + '</strong> שהושלם באתר';
         $('final-global').hidden = false;
       }
     });
