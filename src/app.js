@@ -425,33 +425,57 @@
     return n.toLocaleString('he-IL');
   }
 
-  let globalCount = null; // last known total, null when the service is unavailable
+  // Last known public totals; null while unknown (service not reached yet on this device).
+  const publicCounts = { rounds: null, users: null };
+  // The user count is for the site owner only: it is shown only when the page is opened
+  // with ?owner. This hides it from regular visitors; it is not a secret (the code is public).
+  const OWNER_VIEW = /[?&]owner\b/.test(location.search);
 
-  // Shown on the start screen and the progress screen, including when it is still 0.
   function renderGlobalCount(n) {
-    if (typeof n === 'number') globalCount = n;
+    if (typeof n === 'number') publicCounts.rounds = n;
+    renderPublicCounts();
+  }
+
+  function renderUserCount(n) {
+    if (typeof n === 'number') publicCounts.users = n;
+    renderPublicCounts();
+  }
+
+  // Shown on the start screen and the progress screen, including when a number is still 0.
+  function renderPublicCounts() {
+    const { rounds, users } = publicCounts;
+    const hasRounds = typeof rounds === 'number';
+    const hasUsers = OWNER_VIEW && typeof users === 'number';
     const el = $('global-count');
     const card = $('stats-global');
-    if (typeof globalCount !== 'number') {
+    if (!hasRounds && !hasUsers) {
       el.hidden = true;
       card.hidden = true;
       return;
     }
-    el.innerHTML = '<strong dir="ltr">' + formatCount(globalCount) + '</strong> ' +
-      (globalCount === 1 ? 'סבב הושלם באתר עד היום' : 'סבבים הושלמו באתר עד היום');
+    const parts = [];
+    if (hasUsers) parts.push('<strong dir="ltr">' + formatCount(users) + '</strong> ' + (users === 1 ? 'משתמש' : 'משתמשים'));
+    if (hasRounds) parts.push('<strong dir="ltr">' + formatCount(rounds) + '</strong> ' + (rounds === 1 ? 'סבב הושלם' : 'סבבים הושלמו'));
+    el.innerHTML = parts.join(' · ') + (hasUsers ? '' : ' באתר עד היום');
     el.hidden = false;
 
-    $('stats-global-num').textContent = formatCount(globalCount);
-    $('stats-global-label').textContent =
-      (globalCount === 1 ? 'סבב הושלם' : 'סבבים הושלמו') + ' באתר עד היום, אצל כל המשתמשים';
+    $('stats-users').hidden = !hasUsers;
+    $('stats-users-num').textContent = hasUsers ? formatCount(users) : '';
+    $('stats-users-label').textContent = users === 1 ? 'משתמש' : 'משתמשים';
+    $('stats-rounds').hidden = !hasRounds;
+    $('stats-global-num').textContent = hasRounds ? formatCount(rounds) : '';
+    $('stats-global-label').textContent = rounds === 1 ? 'סבב הושלם' : 'סבבים הושלמו';
     card.hidden = false;
   }
 
-  // Shows the last known total at once, then sends this device's pending rounds and
-  // updates from the service when (and if) it answers.
+  // Shows the last known totals at once, then sends this device's pending increments
+  // (including counting this device as a user the first time) and updates from the service
+  // when (and if) it answers.
   function refreshGlobalCount() {
     if (!window.Counter) return;
     renderGlobalCount(window.Counter.cached());
+    renderUserCount(window.Counter.users.cached());
+    window.Counter.users.register().then(renderUserCount);
     window.Counter.refresh().then(renderGlobalCount);
   }
 

@@ -14,8 +14,9 @@ and computers, with no build step and no dependencies.
   practice days) and the priority that makes wrong or unseen questions likelier. Pure
   functions take `now`; only `load`/`save`/`clear` touch storage, and they never throw.
   If the stored shape changes, bump `version` and the storage key.
-- `src/counter.js`: the public count of completed rounds, stored in the anonymous Abacus
-  counter service. Only `pentelka.github.io` increments it; everything else only reads.
+- `src/counter.js`: the counters (completed rounds, and users = devices counted once on
+  their first visit), stored in the anonymous Abacus counter service. Rounds are shown to
+  everyone; users only with `?owner` in the URL (hidden, not secret: the code is public). Only `pentelka.github.io` increments it; everything else only reads.
   The service can be slow, so the last total is remembered on the device and shown at
   once, and a round that can't be sent stays pending in `localStorage` and is sent on a
   later visit (one send at a time, so nothing is sent twice by the page).

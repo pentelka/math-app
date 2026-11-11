@@ -26,7 +26,9 @@ is in Hebrew.
   no account.
 - **A timer for each question.** It counts up and is never a limit. The results show
   the total time and the average per question.
-- **A public count of completed rounds** on the start screen. It is kept in a free
+- **A public count of completed rounds** on the start screen. Users (devices, each
+  counted once on its first visit) are counted too, but shown only to the owner, at
+  `?owner` (for example https://pentelka.github.io/math-app/?owner). It is kept in a free
   anonymous counter service, so it survives new releases, and nothing personal is sent.
 - No calculations that need pen and paper.
 

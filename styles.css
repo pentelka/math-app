@@ -1000,3 +1000,24 @@ button:focus-visible {
   color: var(--primary-strong);
   font-weight: 800;
 }
+
+/* Users and rounds side by side on the progress screen */
+.global-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.global-stats {
+  display: flex;
+  gap: 22px;
+}
+
+.global-text[hidden] {
+  display: none;
+}
+
+.global-caption {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
