@@ -141,3 +141,77 @@ test('the queue on one device is capped', async () => {
   await c.hit();
   assert.equal(state(storage).pending, Counter.MAX_PENDING);
 });
+
+// ----- User counter: each device is counted once -----
+
+function usersService(start) {
+  // Same fake, but only answers for the users key.
+  const svc = fakeService(start);
+  const inner = svc.fetch;
+  svc.fetch = async (url) => {
+    assert.match(url, /\/pentelka-math-app\/users$/);
+    return inner(url);
+  };
+  return svc;
+}
+
+const usersState = (storage) => JSON.parse(storage.getItem(Counter.STORAGE_KEYS.users) || '{}');
+
+test('a device is counted once as a user, however many visits it makes', async () => {
+  const svc = usersService(20);
+  const storage = memoryStorage();
+  for (let visit = 0; visit < 3; visit++) {
+    const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage });
+    assert.equal(await c.users.register(), 21);
+  }
+  assert.equal(svc.total, 21);
+  assert.equal(svc.calls.filter((u) => u.startsWith('/hit/')).length, 1);
+  assert.deepEqual(usersState(storage), { last: 21, pending: 0, registered: true });
+});
+
+test('two devices are two users', async () => {
+  const svc = usersService(0);
+  await Counter.make({ fetch: svc.fetch, hostname: LIVE, storage: memoryStorage() }).users.register();
+  await Counter.make({ fetch: svc.fetch, hostname: LIVE, storage: memoryStorage() }).users.register();
+  assert.equal(svc.total, 2);
+});
+
+test('a first visit during an outage is counted on a later visit, still only once', async () => {
+  const svc = usersService(5);
+  svc.up = false;
+  const storage = memoryStorage();
+  const visit = () => Counter.make({ fetch: svc.fetch, hostname: LIVE, storage }).users.register();
+  await visit();
+  assert.equal(svc.total, 5);
+  assert.deepEqual(usersState(storage), { last: null, pending: 1, registered: true });
+  svc.up = true;
+  assert.equal(await visit(), 6);
+  assert.equal(await visit(), 6);
+  assert.equal(svc.total, 6);
+});
+
+test('users are only counted on the live site, and not when storage is blocked', async () => {
+  const offSite = usersService(3);
+  await Counter.make({ fetch: offSite.fetch, hostname: 'localhost', storage: memoryStorage() }).users.register();
+  assert.equal(offSite.total, 3);
+  assert.ok(offSite.calls.every((u) => u.startsWith('/get/')));
+
+  const blocked = usersService(3);
+  const broken = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
+  await Counter.make({ fetch: blocked.fetch, hostname: LIVE, storage: broken }).users.register();
+  assert.equal(blocked.total, 3, 'a device that cannot remember being counted is not counted');
+});
+
+test('the user and round counters keep separate state on the device', async () => {
+  const rounds = fakeService(10);
+  const users = fakeService(4);
+  const route = async (url) => (url.includes('/users') ? users.fetch(url) : rounds.fetch(url));
+  const storage = memoryStorage();
+  const c = Counter.make({ fetch: route, hostname: LIVE, storage });
+  await c.users.register();
+  await c.hit();
+  assert.equal(users.total, 5);
+  assert.equal(rounds.total, 11);
+  assert.equal(c.users.cached(), 5);
+  assert.equal(c.cached(), 11);
+});

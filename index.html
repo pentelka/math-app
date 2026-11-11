@@ -8,10 +8,10 @@
          Chrome on Android) from force-darkening it. -->
     <meta name="color-scheme" content="light dark" />
     <!-- Bumped on every release (npm run bump); app.js compares it with the live page. -->
-    <meta name="app-version" content="1.2.1" />
+    <meta name="app-version" content="1.3.0" />
     <title>אלגברה בלי טעויות</title>
-    <link rel="stylesheet" href="vendor/katex/katex.min.css?v=1.2.1" />
-    <link rel="stylesheet" href="styles.css?v=1.2.1" />
+    <link rel="stylesheet" href="vendor/katex/katex.min.css?v=1.3.0" />
+    <link rel="stylesheet" href="styles.css?v=1.3.0" />
   </head>
   <body>
     <div id="update-banner" class="update-banner" role="status" hidden>
@@ -63,10 +63,19 @@
 
         <div id="stats-global" class="card global-card" hidden>
           <span class="global-icon" aria-hidden="true">∑</span>
-          <span class="global-text">
-            <strong id="stats-global-num" dir="ltr"></strong>
-            <span id="stats-global-label"></span>
-          </span>
+          <div class="global-body">
+            <div class="global-stats">
+              <span id="stats-users" class="global-text">
+                <strong id="stats-users-num" dir="ltr"></strong>
+                <span id="stats-users-label"></span>
+              </span>
+              <span id="stats-rounds" class="global-text">
+                <strong id="stats-global-num" dir="ltr"></strong>
+                <span id="stats-global-label"></span>
+              </span>
+            </div>
+            <span class="global-caption">באתר עד היום, אצל כולם</span>
+          </div>
         </div>
 
         <div id="stats-empty" class="card empty-state">
@@ -151,11 +160,11 @@
       </section>
     </main>
 
-    <script src="vendor/katex/katex.min.js?v=1.2.1"></script>
-    <script src="src/bank.js?v=1.2.1"></script>
-    <script src="src/quiz.js?v=1.2.1"></script>
-    <script src="src/progress.js?v=1.2.1"></script>
-    <script src="src/counter.js?v=1.2.1"></script>
-    <script src="src/app.js?v=1.2.1"></script>
+    <script src="vendor/katex/katex.min.js?v=1.3.0"></script>
+    <script src="src/bank.js?v=1.3.0"></script>
+    <script src="src/quiz.js?v=1.3.0"></script>
+    <script src="src/progress.js?v=1.3.0"></script>
+    <script src="src/counter.js?v=1.3.0"></script>
+    <script src="src/app.js?v=1.3.0"></script>
   </body>
 </html>
