@@ -14,6 +14,10 @@
 //     adds one per request.
 //   - Only one send per counter runs at a time, so a pending increment is never sent twice
 //     by this page.
+//   - Sends use fetch keepalive, so the browser finishes them even if the student closes
+//     the app right after a round (the moment a round is counted). An increment leaves the
+//     pending queue *before* it is sent and goes back only if the send definitely failed,
+//     so a send that completes after the page is gone is never repeated on a later visit.
 //
 // Only the live site increments (see COUNTING_HOSTS), so local runs and tests don't inflate
 // the numbers. Every failure resolves quietly.
@@ -26,7 +30,7 @@
   const COUNTING_HOSTS = ['pentelka.github.io'];
   const STORAGE_KEYS = { rounds: 'algebra-quiz-counter-v1', users: 'algebra-quiz-users-v1' };
   const GET_TIMEOUT_MS = 15000;
-  const HIT_TIMEOUT_MS = 25000;
+  const HIT_TIMEOUT_MS = 40000; // the service has taken up to ~25 s to answer
   const MAX_PENDING = 50; // cap what one device can queue
   const MAX_SEND_PER_FLUSH = 10; // and how many it sends in one go
 
@@ -81,6 +85,8 @@
       try {
         const res = await env.fetch(BASE + '/' + action + '/' + NAMESPACE + '/' + key, {
           cache: 'no-store',
+          // Let the browser finish an increment even if the page is closed meanwhile.
+          keepalive: action === 'hit',
           signal: controller ? controller.signal : undefined,
         });
         if (res.status === 404) return 0; // nothing counted yet
@@ -94,31 +100,50 @@
       }
     }
 
-    // Best known total: the last total from the service plus this device's unsent increments.
+    let inflight = 0; // increments sent from this page and not answered yet
+
+    // Best known total: the last total from the service plus this device's increments that
+    // the service hasn't confirmed yet (queued or on their way).
     function cached() {
       if (disabled) return null;
       const s = load();
-      return s.last === null ? null : s.last + s.pending;
+      return s.last === null ? null : s.last + s.pending + inflight;
     }
 
     // Sends this device's pending increments, one request each, stopping at the first failure.
+    // Each increment is taken off the queue before its request and put back only on a
+    // definite failure while this page is still open.
     function flush() {
       if (disabled || !counts) return Promise.resolve();
       if (flushing) return flushing;
+      // Note: `flushing` is cleared in .finally(), which always runs after this assignment.
+      // Clearing it inside the async function would run *before* the assignment when there
+      // is nothing to send, leaving `flushing` set forever and blocking every later send.
       flushing = (async () => {
-        try {
-          for (let sent = 0; sent < MAX_SEND_PER_FLUSH && load().pending > 0; sent++) {
-            const total = await request('hit', HIT_TIMEOUT_MS);
-            if (typeof total !== 'number') break;
-            const s = load();
-            s.pending = Math.max(0, s.pending - 1);
-            s.last = total;
-            save(s);
+        for (let sent = 0; sent < MAX_SEND_PER_FLUSH; sent++) {
+          let s = load();
+          if (s.pending <= 0) break;
+          s.pending -= 1;
+          save(s);
+          inflight++;
+          let total;
+          try {
+            total = await request('hit', HIT_TIMEOUT_MS);
+          } finally {
+            inflight--;
           }
-        } finally {
-          flushing = null;
+          s = load();
+          if (typeof total !== 'number') {
+            s.pending = Math.min(s.pending + 1, MAX_PENDING);
+            save(s);
+            break;
+          }
+          s.last = total;
+          save(s);
         }
-      })();
+      })().finally(() => {
+        flushing = null;
+      });
       return flushing;
     }
 
@@ -161,7 +186,7 @@
       return refresh();
     }
 
-    return { cached, refresh, hit, hitOnce, counts };
+    return { cached, refresh, hit, hitOnce, flush, counts };
   }
 
   // env: { fetch, hostname, search, storage } so this can be tested without a browser.
@@ -175,6 +200,8 @@
       hit: rounds.hit,
       counts: rounds.counts,
       users: { cached: users.cached, refresh: users.refresh, register: users.hitOnce },
+      // Sends whatever is queued for both counters (used when the page is being left).
+      flush: () => Promise.all([rounds.flush(), users.flush()]),
     };
   }
 

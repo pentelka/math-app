@@ -215,3 +215,86 @@ test('the user and round counters keep separate state on the device', async () =
   assert.equal(c.users.cached(), 5);
   assert.equal(c.cached(), 11);
 });
+
+// ----- Sends that outlive the page (keepalive) -----
+
+test('increments are sent with keepalive, reads are not', async () => {
+  const seen = [];
+  const fetch = async (url, opts) => {
+    seen.push([url.includes('/hit/') ? 'hit' : 'get', opts.keepalive]);
+    return json(200, { value: 1 });
+  };
+  await Counter.make({ fetch, hostname: LIVE, storage: memoryStorage() }).hit();
+  assert.deepEqual(seen, [['hit', true]]);
+  seen.length = 0;
+  await Counter.make({ fetch, hostname: LIVE, storage: memoryStorage() }).refresh();
+  assert.deepEqual(seen, [['get', false]]);
+});
+
+test('a round whose send outlives the page is not sent again on the next visit', async () => {
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 7, pending: 0 }) });
+  // The student finishes a round and closes the app while the slow request is in flight:
+  // the request never resolves for this page (the browser completes it after unload).
+  let hits = 0;
+  const hanging = async (url) => {
+    if (url.includes('/hit/')) hits++;
+    return new Promise(() => {});
+  };
+  const closing = Counter.make({ fetch: hanging, hostname: LIVE, storage });
+  closing.hit(); // not awaited: the page is gone
+  await new Promise((r) => setImmediate(r));
+  assert.equal(hits, 1);
+  assert.equal(closing.cached(), 8, 'the round shows while it is on its way');
+  assert.equal(state(storage).pending, 0, 'it already left the queue');
+
+  // Next visit: nothing to resend.
+  const svc = fakeService(8);
+  await Counter.make({ fetch: svc.fetch, hostname: LIVE, storage }).refresh();
+  assert.equal(svc.calls.filter((u) => u.startsWith('/hit/')).length, 0);
+});
+
+test('a definite failure puts the round back in the queue', async () => {
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 3, pending: 0 }) });
+  const c = Counter.make({ fetch: async () => json(503, {}), hostname: LIVE, storage });
+  assert.deepEqual(await c.hit(), { total: 4, sent: false });
+  assert.deepEqual(state(storage), { last: 3, pending: 1 });
+});
+
+test('flush() sends what is queued for both counters', async () => {
+  const rounds = fakeService(10);
+  const users = fakeService(2);
+  const route = async (url) => (url.includes('/users') ? users.fetch(url) : rounds.fetch(url));
+  const storage = memoryStorage({
+    [Counter.STORAGE_KEYS.rounds]: JSON.stringify({ last: 10, pending: 2 }),
+    [Counter.STORAGE_KEYS.users]: JSON.stringify({ last: 2, pending: 1, registered: true }),
+  });
+  await Counter.make({ fetch: route, hostname: LIVE, storage }).flush();
+  assert.equal(rounds.total, 12);
+  assert.equal(users.total, 3);
+});
+
+// Regression: the real page first refreshes with nothing queued, and only later finishes a
+// round. The send lock used to stay set after an empty flush, so that round was never sent
+// during the visit (only on the next one).
+test('a round finished later in the same visit is sent at once', async () => {
+  const svc = fakeService(7);
+  const storage = memoryStorage({ [Counter.STORAGE_KEY]: JSON.stringify({ last: 7, pending: 0 }) });
+  const c = Counter.make({ fetch: svc.fetch, hostname: LIVE, search: '', storage });
+  await c.refresh(); // page load: nothing to send
+  await c.flush(); // leaving and coming back: still nothing
+  assert.deepEqual(await c.hit(), { total: 8, sent: true }, 'first round of the visit');
+  assert.deepEqual(await c.hit(), { total: 9, sent: true }, 'second round of the visit');
+  assert.equal(svc.total, 9);
+  assert.equal(state(storage).pending, 0);
+});
+
+test('the user counter and round counter both send during the same visit', async () => {
+  const rounds = fakeService(5);
+  const users = fakeService(0);
+  const route = async (url) => (url.includes('/users') ? users.fetch(url) : rounds.fetch(url));
+  const c = Counter.make({ fetch: route, hostname: LIVE, storage: memoryStorage() });
+  await Promise.all([c.users.register(), c.refresh()]); // what the page does on load
+  await c.hit();
+  assert.equal(users.total, 1);
+  assert.equal(rounds.total, 6);
+});
