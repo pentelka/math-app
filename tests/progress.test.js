@@ -27,17 +27,20 @@ test('recordAnswer counts answers, correct answers and streaks', () => {
   assert.deepEqual(p.days, ['2026-11-10', '2026-11-11']);
 });
 
-test('priority favours unseen and wrong questions, and eases off mastered ones', () => {
+test('priority: new first, wrong ones come back, right ones rarely', () => {
   const p = Progress.empty();
   const now = at(2026, 11, 10);
   Progress.recordAnswer(p, 'wrong', false, now);
   Progress.recordAnswer(p, 'once', true, now);
   Progress.recordAnswer(p, 'twice', true, now);
   Progress.recordAnswer(p, 'twice', true, now);
-  assert.equal(Progress.priority(p, 'never'), 2);
-  assert.equal(Progress.priority(p, 'wrong'), 3);
-  assert.equal(Progress.priority(p, 'once'), 1);
-  assert.equal(Progress.priority(p, 'twice'), 0.5);
+  const never = Progress.priority(p, 'never');
+  const wrong = Progress.priority(p, 'wrong');
+  const once = Progress.priority(p, 'once');
+  const twice = Progress.priority(p, 'twice');
+  assert.ok(never > wrong, 'new questions come first');
+  assert.ok(wrong > once * 5, 'questions answered wrong come back much more than ones answered right');
+  assert.ok(once > twice && twice > 0, 'right answers come back rarely, mastered ones even more rarely, but never never');
 });
 
 test('totals add up across questions and rounds', () => {
@@ -141,4 +144,22 @@ test('roundFrom respects the count limit', () => {
   const qs = Quiz.QUESTIONS.slice(0, 25);
   assert.equal(Quiz.roundFrom(qs, seeded(1), 10).length, 10);
   assert.equal(Quiz.roundFrom(qs.slice(0, 4), seeded(1), 10).length, 4);
+});
+
+test('balanced rounds: few repeats, and most repeats are questions answered wrong', () => {
+  // Simulated students answering 70% right, 5 יח״ל, all topics.
+  const trials = 60;
+  let repeats = 0, wrongRepeats = 0;
+  for (let t = 0; t < trials; t++) {
+    const random = seeded(500 + t);
+    const p = Progress.empty();
+    const seen = new Set();
+    for (let r = 0; r < 10; r++) {
+      const round = Quiz.makeRound(4, 'all', { random, priority: (q) => Progress.priority(p, q.id) });
+      if (r === 9) for (const q of round) if (seen.has(q.id)) { repeats++; if (p.questions[q.id].last === 'wrong') wrongRepeats++; }
+      for (const q of round) { seen.add(q.id); Progress.recordAnswer(p, q.id, random() < 0.7, 0); }
+    }
+  }
+  assert.ok(repeats / trials < 1, `repeats in round 10: ${repeats / trials}`);
+  assert.ok(wrongRepeats >= repeats / 2, `wrong among repeats: ${wrongRepeats}/${repeats}`);
 });
