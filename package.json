@@ -1,6 +1,6 @@
 {
   "name": "math-app",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "description": "Multiple-choice practice on algebra rules and common mistakes, up to 5-unit Bagrut level.",
   "scripts": {
